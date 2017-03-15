@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<canvas id="myCanvas" width="2000" height="1000"></canvas>
+</body>
+<script> "use strict"
+
+function setup() {
+var canvas = document.getElementById('myCanvas');
+var context = canvas.getContext('2d');
+var y=600;
+var theta = 0;
+var increase = true;
+function draw() {
+
+function PI(degree)
+{
+return degree/180*Math.PI;
+};
+
+function drawHead()
+{
+context.beginPath();
+context.arc(100, 100, 20, PI(-210), PI(30), false);
+context.closePath();
+context.fillStyle="#000";
+context.fill();
+//------------draw antennas------------------
+context.beginPath();
+context.moveTo(90,90);
+context.lineTo(80,75);
+context.arc(78, 73, 2, PI(-360), PI(0), false);
+context.moveTo(110,90);
+context.lineTo(120,75);
+context.arc(122, 73, 2, PI(-360), PI(0), false);
+context.lineWidth = 1;
+context.strokeStyle="#000";
+context.stroke();
+};
+
+function drawBody(){
+context.beginPath();
+context.moveTo(100,100);
+context.quadraticCurveTo(50, 160, 100, 220);
+context.moveTo(100,100);
+context.quadraticCurveTo(150, 160, 100, 220);
+context.moveTo(85,120);
+context.lineTo(115,120);
+context.moveTo(80,140);
+context.lineTo(120,140);
+context.moveTo(75,160);
+context.lineTo(125,160);
+context.moveTo(78,180);
+context.lineTo(122,180);
+context.moveTo(85,200);
+context.lineTo(115,200);
+context.lineWidth = 4;
+context.strokeStyle="#000";
+context.stroke();
+};
+
+function drawLeft(){
+context.beginPath();
+context.arc(0, 60, 60, PI(-270), PI(-90), false);
+context.closePath();
+context.strokeStyle="#000";
+context.stroke();
+context.fillStyle="#F00";
+context.fill();
+
+context.beginPath();
+context.arc(0, 55, 15, PI(-270), PI(-90), false);
+context.closePath();
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(-20, 25, 10, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(-38, 62, 12, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(-20, 90, 6, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+};
+
+function drawRight(){
+context.beginPath();
+context.arc(0, 60, 60, PI(-90), PI(90), false);
+context.closePath();
+context.strokeStyle="#000";
+context.stroke();
+context.fillStyle="#F00";
+context.fill();
+
+context.beginPath();
+context.arc(0, 55, 15, PI(-90), PI(90), false);
+context.closePath();
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(20, 25, 10, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(38, 62, 12, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+
+context.beginPath();
+context.arc(20, 90, 6, PI(-360), PI(0), false);
+context.fillStyle="#000";
+context.fill();
+};
+
+//-------set the y-coordinate--------
+y<0?y=600:y-=5;
+canvas.width = canvas.width;
+
+context.save();
+context.translate(0,y);
+drawHead();
+drawBody();
+context.save();
+
+//-------set the angle of the wings--
+if(theta>20)
+increase = false;
+if(theta<0)
+increase = true;
+if(increase == true)
+theta=theta+5;
+else
+theta=theta-5;
+
+//---------rotate the wings----------
+context.translate(100,110);
+context.rotate(PI(theta));
+drawLeft();
+
+context.restore();
+context.translate(100,110);
+context.rotate(PI(-theta));
+drawRight(); 
+
+window.requestAnimationFrame(draw);
+};
+window.requestAnimationFrame(draw);
+//draw();
+
+};
+window.onload = setup();
+</script>
+<head>
+  <meta name="Qiying's p2" content="p2">
+  <meta charset="utf-8">
+  <title>Qiying's p2-"bug"</title>
+</head>
+</html>
