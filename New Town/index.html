@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Graphics town framework code by Mike Gleicher
+  -- written October, 2015
+  -->
+<head>
+    <meta charset="UTF-8">
+    <title>GraphicsTown JS 2015!</title>
+</head>
+<body>
+<!-- load this stuff first -->
+<script src="Libraries/twgl-full.js"></script>
+<script src="Libraries/panel.js"></script>
+<script src="Libraries/arcball.js"></script>
+<script src="grobject.js"></script>
+<script src="ExampleObjects/eagle.js"></script>
+<script src="ExampleObjects/ground.js"></script>
+<script src="ExampleObjects/box.js"></script>
+<script src="ExampleObjects/house.js"></script>
+
+<script src="ExampleObjects/triangle.js"></script>
+<script src="ExampleObjects/tree.js"></script>
+<script src="ExampleObjects/pointer.js"></script>
+<script src="ExampleObjects/east.js"></script>
+<script src="ExampleObjects/star.js"></script>
+<script src="ExampleObjects/volcano.js"></script>
+<script src="ExampleObjects/movingCube.js"></script>
+<!--<script src="ExampleObjects/background.js"></script>-->
+<!-- This is where we load the objects for the world -->
+
+<!--
+<script src="ExampleObjects/simplest.js"></script>
+<script src="ExampleObjects/texturedplane.js"></script>
+<script src="ExampleObjects/cube.js"></script>
+-->
+<!-- I am adding the helicopter
+<script src="Helicopter/helicopter.js"></script>
+-->
+<!-- This gets loaded LAST (actually, it probably doesn't have to) -->
+<script src="graphicstown.js"></script>
+</body>
+
+<!-- all of the shaders get stuck here in the HTML because
+  -- that's the only way I know to load them without either
+  -- sticking them in JavaScript strings, or using a web server
+  -->
+
+<script id="cube-vs" type="notjs">
+// specialized shader for the simple cube
+// we assume that the model matrix works as the normal
+//      matrix - this only is try if the model matrix
+//      it a rotate/translate
+//      (uniform scale is OK since we re-normalize)
+// color is solid
+// simple lighting
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+    uniform vec3 cubecolor;
+    uniform vec3 dynamiclight;
+    varying vec4 dynamicLightSource;
+
+    void main(void) {
+        gl_Position = proj * view * model * vec4(vpos, 1.0);
+        fPosition = (view*model * vec4(vpos, 1.0)).xyz;
+        ePosition = gl_Position.xyz;
+
+        vec4 normal = normalize(model * vec4(vnormal,0.0));
+        fNormal = normal.xyz;
+
+        dynamicLightSource = view*model * vec4(dynamiclight, 1.0);
+
+        float diffuse = .5 + .5*abs(max(0.0, dot(normal, vec4(lightdir,0.0))));
+        outColor = cubecolor * diffuse;
+
+    }
+</script>
+<script id="cube-fs" type="notjs">
+// simple shader that does vertex coloring
+//  (e.g. the vertex shader figures the lighting
+// note this is used for more than just the cube
+    precision highp float;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+    varying vec4 dynamicLightSource;
+
+    uniform vec3 dynamiclight;
+
+    void main(void) {
+        vec3 e = normalize(-ePosition);
+        vec3 n = normalize(fNormal);
+        vec3 l = normalize(-fPosition + dynamicLightSource.xyz);
+
+        vec3 h = normalize(e+l);
+        float s= pow(max(dot(h,n),0.5),3.0);
+
+        //gl_FragColor = vec4(outColor*0.1 + 0.8*s , 1.0);
+        gl_FragColor = vec4(outColor*0.7 + 0.3*s , 1.0);
+    }
+</script>
+
+<script id="roundhouse-vs" type="notjs">
+// specialized shader for the simple cube
+// we assume that the model matrix works as the normal
+//      matrix - this only is try if the model matrix
+//      it a rotate/translate
+//      (uniform scale is OK since we re-normalize)
+// color is solid
+// simple lighting
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec2 vTexCoor;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+    varying vec2 fTexCoor;
+    varying float diffuse;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+    uniform vec3 cubecolor;
+    uniform vec3 dynamiclight;
+    varying vec4 dynamicLightSource;
+
+
+    void main(void) {
+        gl_Position = proj * view * model * vec4(vpos, 1.0);
+        fPosition = (view*model * vec4(vpos, 1.0)).xyz;
+        ePosition = gl_Position.xyz;
+        fTexCoor = vTexCoor;
+        vec4 normal = normalize(model * vec4(vnormal,0.0));
+        fNormal = normal.xyz;
+
+        dynamicLightSource = view*model * vec4(dynamiclight, 1.0);
+
+        diffuse = .5 + .5*abs(max(0.0, dot(normal, vec4(lightdir,0.0))));
+
+    }
+</script>
+<script id="roundhouse-fs" type="notjs">
+// simple shader that does vertex coloring
+//  (e.g. the vertex shader figures the lighting
+// note this is used for more than just the cube
+    precision highp float;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+    varying vec2 fTexCoor;
+    varying vec4 dynamicLightSource;
+    uniform sampler2D texSampler;
+    uniform vec3 dynamiclight;
+    varying float diffuse;
+
+    void main(void) {
+        vec4 texColor= texture2D(texSampler, fTexCoor);
+        vec3 e = normalize(-ePosition);
+        vec3 n = normalize(fNormal);
+        vec3 l = normalize(-fPosition + dynamicLightSource.xyz);
+
+        vec3 h = normalize(e+l);
+        float s= pow(max(dot(h,n),0.5),1.0);
+
+        //gl_FragColor = vec4(outColor*0.1 + 0.8*s , 1.0);
+        //gl_FragColor = vec4(outColor*0.7 + 0.3*s , 1.0);
+        gl_FragColor = vec4(texColor.xyz*diffuse + 0.4*s, texColor.a);
+    }
+</script>
+
+<script id="sky-vs" type="notjs">
+// specialized shader for the simple cube
+// we assume that the model matrix works as the normal
+//      matrix - this only is try if the model matrix
+//      it a rotate/translate
+//      (uniform scale is OK since we re-normalize)
+// color is solid
+// simple lighting
+    precision highp float;
+
+    attribute vec3 vpos;
+    attribute vec3 vnormal;
+    attribute vec2 vTexCoor;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+    varying vec2 fTexCoor;
+    varying float diffuse;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+    uniform vec3 lightdir;
+    uniform vec3 cubecolor;
+    uniform vec3 dynamiclight;
+    varying vec4 dynamicLightSource;
+
+
+    void main(void) {
+        gl_Position = proj * view * model * vec4(vpos, 1.0);
+        fPosition = (view*model * vec4(vpos, 1.0)).xyz;
+        ePosition = gl_Position.xyz;
+        fTexCoor = vTexCoor;
+        vec4 normal = normalize(model * vec4(vnormal,0.0));
+        fNormal = normal.xyz;
+
+        dynamicLightSource = view*model * vec4(dynamiclight, 1.0);
+
+        diffuse = .7 ;
+
+    }
+</script>
+<script id="sky-fs" type="notjs">
+// simple shader that does vertex coloring
+//  (e.g. the vertex shader figures the lighting
+// note this is used for more than just the cube
+    precision highp float;
+    varying vec3 outColor;
+    varying vec3 fNormal;
+    varying vec3 fPosition;
+    varying vec3 ePosition;
+    varying vec2 fTexCoor;
+    varying vec4 dynamicLightSource;
+    uniform sampler2D texSampler;
+    uniform vec3 dynamiclight;
+    varying float diffuse;
+
+    void main(void) {
+        vec4 texColor= texture2D(texSampler, fTexCoor);
+        vec3 e = normalize(-ePosition);
+        vec3 n = normalize(fNormal);
+        vec3 l = normalize(-fPosition + dynamicLightSource.xyz);
+
+        vec3 h = normalize(e+l);
+        float s= pow(max(dot(h,n),0.5),1.0);
+        gl_FragColor = vec4(texColor.xyz*diffuse, texColor.a);
+    }
+</script>
+
+
+<!-- Special Ground Plane Shader - makes a boring
+  -- checkerboard
+  -->
+<script id="ground-vs" type="not-js">
+    precision highp float;
+
+    attribute vec3 vpos;
+    varying vec3 outPos;
+
+    uniform mat4 view;
+    uniform mat4 proj;
+
+    void main(void) {
+        gl_Position = proj * view * vec4(vpos, 1.0);
+        outPos = vpos;
+    }
+</script>
+<script id="ground-fs" type="notjs">
+    // note this is used for more than just the cube
+    precision highp float;
+    varying vec3 outPos;
+    void main(void) {
+        float xs = step(1.0,mod(outPos.x,2.0));
+        float zs = step(1.0,mod(outPos.z,2.0));
+        float ss = (xs>.5) ? zs : 1.0-zs;
+        gl_FragColor = mix(vec4(0.5,0.5,0.5,1),
+                           vec4(0.3,0.5,0.4,1),
+                           ss
+                           );
+
+    }
+</script>
+
+</html>
